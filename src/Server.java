@@ -10,7 +10,7 @@ public class Server implements Runnable {
     private ArrayList<connectionHandler> connections;
     private ServerSocket server;
     private boolean done;
-
+    private String clientIP;
     private ExecutorService pool;
 
     public Server() {
@@ -27,6 +27,8 @@ public class Server implements Runnable {
             while (!done) {
                 Socket client = server.accept();
                 connectionHandler handler = new connectionHandler(client);
+                clientIP = (client.getRemoteSocketAddress()).toString();
+                System.out.println(clientIP.substring(1, clientIP.length() - 1) + " Trying to Connect");
                 connections.add(handler);
                 pool.execute(handler);
             }
@@ -76,11 +78,13 @@ public class Server implements Runnable {
                 in = new BufferedReader(new InputStreamReader(client.getInputStream()));
                 out.println("Please Enter a Nickname: ");
                 nickname = in.readLine();
-                System.out.println(nickname + " Connected");
+                System.out.println("Remote Address " + (client.getRemoteSocketAddress()).toString() + " " + nickname
+                        + " Connected");
                 broadcast(nickname + " Joined the Chat!");
                 String message;
                 while ((message = in.readLine()) != null) {
-                    System.out.println(nickname + " typed " + message);
+                    System.out.println(
+                            (client.getRemoteSocketAddress()).toString() + " " + nickname + " Entered : " + message);
                     if (message.startsWith("/nick")) {
                         String[] messageSplit = message.split(" ", 2);
                         if (messageSplit.length == 2) {
@@ -92,7 +96,7 @@ public class Server implements Runnable {
                             out.println("No nickname provided!");
                         }
                     } else if (message.startsWith("/quit")) {
-                        broadcast(nickname + " Lest the chat!");
+                        broadcast(nickname + " Left the chat!");
                         shutdown();
                     } else {
                         broadcast(nickname + " : " + message);
